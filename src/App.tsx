@@ -8,15 +8,8 @@ import Index from "./pages/Index";
 import Documentation from "./pages/Documentation";
 import NotFound from "./pages/NotFound";
 
-// Add mermaid import
+// Import mermaid without initializing it here (moved to MermaidDiagram component)
 import mermaid from "mermaid";
-
-// Initialize mermaid
-mermaid.initialize({
-  startOnLoad: true,
-  theme: 'neutral',
-  securityLevel: 'loose',
-});
 
 const queryClient = new QueryClient();
 

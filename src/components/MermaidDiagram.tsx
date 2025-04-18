@@ -28,7 +28,12 @@ export const MermaidDiagram = ({ chart, title }: MermaidDiagramProps) => {
     if (containerRef.current) {
       // Clear existing SVG
       containerRef.current.innerHTML = `<div class="mermaid">${chart}</div>`;
-      mermaid.init(undefined, containerRef.current.querySelector('.mermaid'));
+      
+      // Fix: Cast the element to HTMLElement to satisfy TypeScript
+      const element = containerRef.current.querySelector('.mermaid');
+      if (element) {
+        mermaid.init(undefined, element as HTMLElement);
+      }
     }
   }, [chart]);
 
