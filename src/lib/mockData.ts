@@ -1,4 +1,3 @@
-
 import { CURRENCIES, TRANSACTION_TYPES, TRANSACTION_STATUS } from "./constants";
 
 // Mock wallet balances
@@ -257,80 +256,96 @@ sequenceDiagram
 // Mock database schema diagram
 export const mockLedgerSchemaDiagram = `
 erDiagram
+    USERS ||--o{ WALLETS : has
+    USERS ||--o{ TRANSACTIONS : makes
+    USERS ||--o{ PAYMENT_METHODS : owns
+    WALLETS ||--o{ LEDGER_ENTRIES : records
+    TRANSACTIONS ||--o{ LEDGER_ENTRIES : generates
+    TRANSACTIONS ||--o{ CURRENCY_CONVERSIONS : involves
+    WALLETS ||--o{ HOLDS : contains
+
     USERS {
         uuid id PK
-        string email
-        string full_name
-        string phone
-        string bvn
-        bool kyc_verified
-        datetime created_at
-        datetime updated_at
+        text email
+        text phone
+        text first_name
+        text last_name
+        text bvn
+        text nin
+        enum kyc_status
+        timestamp kyc_verified_at
+        enum account_type
+        uuid auth_id FK
     }
-    
+
     WALLETS {
         uuid id PK
         uuid user_id FK
-        string currency_code
+        enum currency
         decimal ledger_balance
         decimal available_balance
-        decimal hold_balance
-        datetime created_at
-        datetime updated_at
+        boolean is_active
     }
-    
+
     TRANSACTIONS {
         uuid id PK
-        uuid wallet_id FK
-        string type
-        string status
+        text reference
+        uuid user_id FK
+        enum transaction_type
+        enum status
         decimal amount
-        string currency_code
-        string description
-        string reference
-        datetime created_at
-        datetime updated_at
+        decimal fee
+        enum currency
+        text description
+        jsonb metadata
     }
-    
+
     LEDGER_ENTRIES {
         uuid id PK
         uuid transaction_id FK
         uuid wallet_id FK
-        string entry_type
+        enum entry_type
         decimal amount
-        string currency_code
         decimal balance_after
-        datetime created_at
     }
-    
+
     CURRENCY_CONVERSIONS {
         uuid id PK
         uuid transaction_id FK
-        string source_currency
-        string target_currency
-        decimal source_amount
-        decimal target_amount
-        decimal exchange_rate
-        datetime created_at
+        enum from_currency
+        enum to_currency
+        decimal from_amount
+        decimal to_amount
+        decimal rate
+        decimal fee
     }
-    
+
     HOLDS {
         uuid id PK
         uuid wallet_id FK
-        uuid transaction_id FK
         decimal amount
-        string reason
-        datetime expires_at
-        datetime created_at
-        datetime released_at
+        text reason
+        enum status
+        timestamp expires_at
     }
 
-    USERS ||--o{ WALLETS : "has"
-    WALLETS ||--o{ TRANSACTIONS : "contains"
-    TRANSACTIONS ||--o{ LEDGER_ENTRIES : "generates"
-    TRANSACTIONS ||--o{ CURRENCY_CONVERSIONS : "may include"
-    WALLETS ||--o{ HOLDS : "may have"
-    TRANSACTIONS ||--o{ HOLDS : "may create"
+    PAYMENT_METHODS {
+        uuid id PK
+        uuid user_id FK
+        text type
+        text provider
+        boolean is_default
+        jsonb details
+        boolean is_verified
+    }
+
+    EXCHANGE_RATES {
+        uuid id PK
+        enum from_currency
+        enum to_currency
+        decimal rate
+        text source
+    }
 `;
 
 // Mock user stories
