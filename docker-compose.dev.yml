@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # Frontend Development Service
+  frontend-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.simple
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:8000/api
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - backend-dev
+    networks:
+      - naira-vault-network
+
+  # Backend Development Service
+  backend-dev:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8000:8000"
+    environment:
+      - NODE_ENV=development
+      - PORT=8000
+      - DATABASE_URL=postgresql://naira_vault:naira_vault_password@postgres:5432/naira_vault_db
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=dev-jwt-secret
+      - FRONTEND_URL=http://localhost:3000
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - naira-vault-network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=naira_vault_db
+      - POSTGRES_USER=naira_vault
+      - POSTGRES_PASSWORD=naira_vault_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - naira-vault-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - naira-vault-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  naira-vault-network:
+    driver: bridge

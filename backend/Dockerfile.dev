@@ -1,0 +1,27 @@
+# Development Dockerfile for Naira Vault Ledger Backend
+FROM node:18-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    postgresql-client
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy source code
+COPY . .
+
+# Expose port
+EXPOSE 8000
+
+# Start development server
+CMD ["npm", "run", "dev"]
