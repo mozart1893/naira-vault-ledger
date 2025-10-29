@@ -1,0 +1,42 @@
+# Backend-specific gitignore
+
+# Logs
+logs/*
+!logs/.gitkeep
+*.log
+npm-debug.log*
+
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.production.local
+
+# Build
+dist/
+build/
+
+# Test coverage
+coverage/
+
+# Editor
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# Lock files (keep package-lock.json)
+# yarn.lock
+# pnpm-lock.yaml
+

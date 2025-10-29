@@ -255,3 +255,17 @@ tramp
 
 # Documentation files created during setup
 docs/FAVICON_UPDATE.md
+
+# Microservices Implementation (Development/Experimental)
+# This is development code - not ready for production
+microservices-implementation/
+
+# Admin Portal environment (sensitive)
+admin-portal/.env
+admin-portal/.env.local
+
+# Backend environment (sensitive)
+backend/.env
+backend/.env.local
+backend/logs/*
+!backend/logs/.gitkeep

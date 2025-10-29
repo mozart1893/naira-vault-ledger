@@ -25,8 +25,7 @@ The Naira Vault Ledger System is a fintech application that provides:
 ### Backend
 - **Node.js** - Runtime environment
 - **Express.js** - Web framework
-- **PostgreSQL** - Primary database
-- **Supabase** - Backend-as-a-Service
+- **PostgreSQL** - Primary database (port 5444)
 - **Redis** - Caching layer
 
 ### Infrastructure
@@ -62,9 +61,10 @@ docker-compose up --build -d
 ```
 
 3. **Access the application**
-- Frontend: http://localhost:3000
+- User Frontend: http://localhost:3000
+- Admin Portal: http://localhost:3002 (separate service)
 - Backend API: http://localhost:8000
-- Database: localhost:5432
+- Database: localhost:5444
 
 ### Troubleshooting
 
@@ -102,19 +102,56 @@ npm run preview
 
 ```
 naira-vault-ledger/
-├── src/
-│   ├── components/          # React components
-│   │   ├── ui/             # shadcn/ui components
-│   │   └── ...             # Custom components
-│   ├── pages/              # Page components
-│   ├── hooks/              # Custom React hooks
-│   ├── lib/                # Utility functions
-│   ├── integrations/       # External service integrations
-│   └── main.tsx           # Application entry point
-├── supabase/               # Supabase configuration
-├── docker/                 # Docker configurations
-├── docs/                   # Documentation
-└── docker-compose.yml     # Multi-container setup
+├── admin-portal/                   # Admin Portal (Separate Service - Port 3002)
+│   ├── src/                       # Admin React application
+│   │   ├── pages/                 # Admin pages (Dashboard, Users, KYC, Analytics)
+│   │   ├── components/            # Admin components
+│   │   ├── contexts/              # Admin auth context
+│   │   └── lib/                   # Admin API client
+│   ├── package.json               # Admin dependencies
+│   └── vite.config.ts             # Configured for port 3002
+│
+├── backend/                        # Monolithic Backend (Production-Ready)
+│   ├── src/                       # Backend source code
+│   │   ├── controllers/           # Business logic
+│   │   ├── routes/                # API endpoints
+│   │   ├── services/              # Email, SMS services
+│   │   ├── utils/                 # Utilities (OTP, logger)
+│   │   └── index.js              # Server entry point
+│   └── sql/                       # Database schema
+│
+├── src/                           # Frontend (React + TypeScript)
+│   ├── components/                # React components
+│   │   ├── ui/                    # shadcn/ui components
+│   │   └── ...                    # Custom components
+│   ├── pages/                     # Page components (Landing, Register, Login, Dashboard)
+│   ├── contexts/                  # React contexts (Auth)
+│   ├── hooks/                     # Custom React hooks
+│   ├── lib/                       # Utility functions
+│   └── main.tsx                   # Application entry point
+│
+├── microservices-implementation/  # Microservices Architecture (Scalable)
+│   ├── services/                  # 7 Microservices + Shared libraries
+│   │   ├── shared/                # Common libraries
+│   │   ├── api-gateway/           # Request routing (8000)
+│   │   ├── auth-service/          # Authentication (8001)
+│   │   ├── user-service/          # User profiles (8002)
+│   │   ├── wallet-service/        # Wallets (8003)
+│   │   ├── transaction-service/   # Transactions (8004)
+│   │   ├── currency-service/      # Exchange rates (8005)
+│   │   └── notification-service/  # Email/SMS (8006)
+│   ├── docker-compose.microservices.yml
+│   └── README.md                  # Microservices documentation
+│
+├── docs/                          # Complete Documentation (19 files)
+│   ├── README.md                  # Documentation index
+│   ├── QUICK_START.md             # Quick setup guide
+│   ├── USER_REGISTRATION.md       # Registration feature
+│   ├── MICROSERVICES_ARCHITECTURE.md
+│   └── ... (15 more guides)
+│
+├── docker-compose.dev.yml         # Monolith development setup
+└── README.md                      # This file
 ```
 
 ## Features
@@ -181,9 +218,8 @@ cp env.sample .env
 2. **Update the values in `.env`:**
 ```bash
 # Frontend variables (Vite)
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 VITE_API_URL=http://localhost:8000/api
+VITE_APP_NAME=Naira Vault Ledger
 
 # Backend variables
 DATABASE_URL=postgresql://naira_vault:naira_vault_password@localhost:5432/naira_vault_db
@@ -210,9 +246,63 @@ cp backend/.env.sample backend/.env
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
+## Documentation
+
+Comprehensive documentation is available in the `/docs` directory, organized by category:
+
+### 📚 Quick Links
+
+**Getting Started:**
+- **[START_HERE.md](./START_HERE.md)** - Quick 2-minute start
+- **[Monolith Startup Guide](./docs/monolith/MONOLITH_STARTUP_GUIDE.md)** - Complete monolith setup
+- **[Microservices Startup Guide](./docs/microservices/MICROSERVICES_STARTUP_GUIDE.md)** - Complete microservices setup
+
+**Core Documentation:**
+- **[User Registration](./docs/features/USER_REGISTRATION.md)** - Registration feature details
+- **[API Documentation](./docs/architecture/API_DOCUMENTATION.md)** - Complete API reference
+- **[Troubleshooting](./docs/general/TROUBLESHOOTING.md)** - Common issues and solutions
+
+**Architecture:**
+- **[System Architecture](./docs/architecture/ARCHITECTURE.md)** - Overall design
+- **[Microservices Architecture](./docs/microservices/MICROSERVICES_ARCHITECTURE.md)** - Scalability design
+- **[Deployment Guide](./docs/general/HYBRID_DEPLOYMENT_GUIDE.md)** - Deployment options
+
+### 📖 Full Documentation Index
+See **[docs/README.md](./docs/README.md)** for complete categorized documentation index.
+
+**Documentation is organized into:**
+- `docs/monolith/` - Monolithic backend documentation (3 files)
+- `docs/microservices/` - Microservices documentation (10 files)
+- `docs/features/` - Feature implementation guides (5 files)
+- `docs/architecture/` - System architecture and API (2 files)
+- `docs/general/` - General guides and overviews (12 files)
+
+## Architecture
+
+This project includes **TWO complete implementations**:
+
+### **1. Monolithic Backend** (`/backend`) - Recommended for Development
+- **Port:** 8000
+- **Status:** ✅ Production-ready, fully functional
+- **Best For:** Development, MVP, small-medium scale (<10k users)
+- **Runs On:** Mac, Linux, Windows
+
+### **2. Microservices** (`/microservices-implementation`) - Ready for Scale
+- **Ports:** 8000-8006 (7 services)
+- **Status:** ✅ Complete implementation, production-ready (Linux)
+- **Best For:** Production scale, team scaling (5+ devs), 10k+ users
+- **Runs On:** Linux servers, Cloud platforms, Kubernetes
+
+Both architectures share the same database schema and frontend. See **[docs/general/HYBRID_DEPLOYMENT_GUIDE.md](./docs/general/HYBRID_DEPLOYMENT_GUIDE.md)** for details.
+
 ## Support
 
-For support and questions, please contact the development team or create an issue in the repository.
+For support and questions:
+- **Quick Start:** [START_HERE.md](./START_HERE.md)
+- **Troubleshooting:** [docs/general/TROUBLESHOOTING.md](./docs/general/TROUBLESHOOTING.md)
+- **Complete Documentation:** [docs/README.md](./docs/README.md)
+- **Service Logs:** Check `backend/logs/` for monolith, Docker logs for microservices
+- **Create an issue:** in the repository for bugs or feature requests
 
 ---
 

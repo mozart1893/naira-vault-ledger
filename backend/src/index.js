@@ -6,9 +6,13 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
+console.log('Starting Naira Vault Backend...');
+
 const logger = require('./utils/logger');
 const { connectDB } = require('./config/database');
 const { connectRedis } = require('./config/redis');
+
+console.log('Loading routes...');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -16,14 +20,23 @@ const userRoutes = require('./routes/users');
 const walletRoutes = require('./routes/wallets');
 const transactionRoutes = require('./routes/transactions');
 const currencyRoutes = require('./routes/currency');
+const kycRoutes = require('./routes/kyc');
+const adminRoutes = require('./routes/admin');
+
+console.log('Routes loaded successfully');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
 
+console.log('Setting up middleware...');
+
 // Security middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: [
+    process.env.FRONTEND_URL || 'http://localhost:3000',
+    process.env.ADMIN_URL || 'http://localhost:3002'
+  ],
   credentials: true
 }));
 
@@ -61,6 +74,10 @@ app.use('/api/users', userRoutes);
 app.use('/api/wallets', walletRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/currency', currencyRoutes);
+app.use('/api/kyc', kycRoutes);
+app.use('/api/admin', adminRoutes);
+
+console.log('API routes configured');
 
 // 404 handler
 app.use('*', (req, res) => {
@@ -88,11 +105,18 @@ async function startServer() {
     await connectRedis();
     
     app.listen(PORT, '0.0.0.0', () => {
+      console.log('='.repeat(50));
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`📍 API URL: http://localhost:${PORT}/api`);
+      console.log(`🏥 Health: http://localhost:${PORT}/health`);
+      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log('='.repeat(50));
       logger.info(`Server running on port ${PORT}`);
       logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
     });
   } catch (error) {
     logger.error('Failed to start server:', error);
+    console.error('❌ Failed to start server:', error);
     process.exit(1);
   }
 }
@@ -108,4 +132,8 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-startServer();
+// Start server with error handling
+startServer().catch(err => {
+  console.error('Fatal error during startup:', err);
+  process.exit(1);
+});

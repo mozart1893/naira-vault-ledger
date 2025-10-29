@@ -55,8 +55,8 @@ npm install
 Create `.env.local` file:
 ```env
 VITE_API_URL=http://localhost:8000/api
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_API_URL=http://localhost:8000/api
+VITE_APP_NAME=Naira Vault Ledger
 ```
 
 #### 3. Start Development Server
@@ -306,8 +306,8 @@ docker-compose ps
 ### Frontend (.env.local)
 ```env
 VITE_API_URL=http://localhost:8000/api
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_API_URL=http://localhost:8000/api
+VITE_APP_NAME=Naira Vault Ledger
 VITE_APP_NAME=Naira Vault Ledger
 VITE_APP_VERSION=1.0.0
 ```

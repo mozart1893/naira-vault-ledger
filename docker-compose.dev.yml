@@ -30,6 +30,11 @@ services:
       - NODE_ENV=development
       - PORT=8000
       - DATABASE_URL=postgresql://naira_vault:naira_vault_password@postgres:5432/naira_vault_db
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=naira_vault_db
+      - DB_USER=naira_vault
+      - DB_PASSWORD=naira_vault_password
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=dev-jwt-secret
       - FRONTEND_URL=http://localhost:3000
@@ -50,7 +55,7 @@ services:
       - POSTGRES_USER=naira_vault
       - POSTGRES_PASSWORD=naira_vault_password
     ports:
-      - "5432:5432"
+      - "5444:5432"  # Map to local port 5444 for external access
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/sql/init.sql:/docker-entrypoint-initdb.d/init.sql

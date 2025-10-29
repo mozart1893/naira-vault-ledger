@@ -17,7 +17,10 @@ CREATE TYPE hold_status AS ENUM ('active', 'released', 'expired');
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email VARCHAR(255) UNIQUE NOT NULL,
-    phone VARCHAR(20),
+    email_verified BOOLEAN DEFAULT false,
+    phone VARCHAR(20) UNIQUE,
+    phone_verified BOOLEAN DEFAULT false,
+    password_hash VARCHAR(255) NOT NULL,
     first_name VARCHAR(100),
     last_name VARCHAR(100),
     bvn VARCHAR(11),
@@ -25,9 +28,26 @@ CREATE TABLE users (
     kyc_status kyc_status DEFAULT 'pending',
     kyc_verified_at TIMESTAMP,
     account_type account_type DEFAULT 'individual',
-    auth_id VARCHAR(255),
+    is_active BOOLEAN DEFAULT true,
+    last_login_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- OTP verification table
+CREATE TABLE otp_verifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    email VARCHAR(255),
+    phone VARCHAR(20),
+    otp_code VARCHAR(6) NOT NULL,
+    otp_type VARCHAR(20) NOT NULL, -- 'email' or 'phone'
+    purpose VARCHAR(50) NOT NULL, -- 'registration', 'login', 'password_reset'
+    is_verified BOOLEAN DEFAULT false,
+    attempts INTEGER DEFAULT 0,
+    expires_at TIMESTAMP NOT NULL,
+    verified_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Wallets table
@@ -144,6 +164,10 @@ CREATE TABLE system_settings (
 -- Create indexes for better performance
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_phone ON users(phone);
+CREATE INDEX idx_otp_verifications_user_id ON otp_verifications(user_id);
+CREATE INDEX idx_otp_verifications_email ON otp_verifications(email);
+CREATE INDEX idx_otp_verifications_phone ON otp_verifications(phone);
+CREATE INDEX idx_otp_verifications_expires_at ON otp_verifications(expires_at);
 CREATE INDEX idx_wallets_user_id ON wallets(user_id);
 CREATE INDEX idx_wallets_currency ON wallets(currency);
 CREATE INDEX idx_transactions_user_id ON transactions(user_id);
@@ -257,9 +281,9 @@ INSERT INTO exchange_rates (from_currency, to_currency, rate, source) VALUES
 ('GBP', 'EUR', 1.15, 'CBN'),
 ('EUR', 'GBP', 0.87, 'CBN');
 
--- Create a sample user for testing
-INSERT INTO users (email, phone, first_name, last_name, kyc_status, account_type) VALUES
-('test@nairavault.com', '+2348012345678', 'Test', 'User', 'verified', 'individual');
+-- Create a sample user for testing (password: Test@123)
+INSERT INTO users (email, email_verified, phone, phone_verified, password_hash, first_name, last_name, kyc_status, account_type) VALUES
+('test@nairavault.com', true, '+2348012345678', true, '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYIRSk4kRzi', 'Test', 'User', 'verified', 'individual');
 
 -- Create sample wallets for the test user
 INSERT INTO wallets (user_id, currency, ledger_balance, available_balance) VALUES
