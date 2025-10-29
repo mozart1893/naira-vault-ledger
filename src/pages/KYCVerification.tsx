@@ -282,7 +282,7 @@ export default function KYCVerification() {
     );
   }
 
-  // If verification is pending
+  // If verification is pending (and not rejected or allowing resubmission)
   if (user?.kycStatus === "pending" && step !== "submitted") {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -314,6 +314,60 @@ export default function KYCVerification() {
                   </Button>
                   <Button variant="outline" onClick={() => navigate("/profile")}>
                     View Profile
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // If verification was rejected - show option to resubmit
+  if (user?.kycStatus === "rejected" && step === "info") {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <Header />
+        <main className="flex-1 py-8">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <XCircle className="h-8 w-8 text-red-600" />
+                  <div>
+                    <CardTitle>KYC Verification Rejected</CardTitle>
+                    <CardDescription>Your previous submission was not approved</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-red-800 font-medium">
+                    Your KYC verification was rejected
+                  </p>
+                  <p className="text-red-600 text-sm mt-1">
+                    Please review the requirements below and submit new documents with correct information.
+                  </p>
+                </div>
+
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-blue-900 mb-2">What You'll Need:</h4>
+                  <ul className="space-y-1 text-sm text-blue-800">
+                    <li>• Clear, legible photos of your documents</li>
+                    <li>• Ensure BVN/NIN number is correct</li>
+                    <li>• ID document must be valid and unexpired</li>
+                    <li>• Selfie should clearly show your face</li>
+                  </ul>
+                </div>
+
+                <div className="flex justify-between pt-4">
+                  <Button variant="outline" onClick={() => navigate("/dashboard")}>
+                    Go to Dashboard
+                  </Button>
+                  <Button onClick={() => { setStep("verification"); updateProgress("verification"); }}>
+                    Re-submit KYC Documents
+                    <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </div>
               </CardContent>

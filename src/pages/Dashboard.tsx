@@ -29,28 +29,52 @@ const Dashboard = () => {
 
           {/* KYC Verification Alert */}
           {user?.kycStatus !== "verified" && (
-            <Alert className="mb-6 border-purple-200 bg-purple-50">
-              <Shield className="h-4 w-4 text-purple-600" />
+            <Alert className={`mb-6 ${
+              user?.kycStatus === "rejected" 
+                ? "border-red-200 bg-red-50" 
+                : "border-purple-200 bg-purple-50"
+            }`}>
+              {user?.kycStatus === "rejected" ? (
+                <AlertCircle className="h-4 w-4 text-red-600" />
+              ) : (
+                <Shield className="h-4 w-4 text-purple-600" />
+              )}
               <AlertDescription className="flex items-center justify-between">
                 <div className="flex-1">
-                  <p className="font-medium text-purple-900">
+                  <p className={`font-medium ${
+                    user?.kycStatus === "rejected" 
+                      ? "text-red-900" 
+                      : "text-purple-900"
+                  }`}>
                     {user?.kycStatus === "pending" 
-                      ? "KYC Verification In Progress" 
+                      ? "KYC Verification In Progress"
+                      : user?.kycStatus === "rejected"
+                      ? "KYC Verification Rejected"
                       : "Complete Your KYC Verification"}
                   </p>
-                  <p className="text-sm text-purple-700 mt-1">
+                  <p className={`text-sm mt-1 ${
+                    user?.kycStatus === "rejected" 
+                      ? "text-red-700" 
+                      : "text-purple-700"
+                  }`}>
                     {user?.kycStatus === "pending"
                       ? "Your documents are being reviewed. We'll notify you within 24-48 hours."
+                      : user?.kycStatus === "rejected"
+                      ? "Your verification was rejected. You can now resubmit with corrected documents."
                       : "Verify your identity to unlock higher transaction limits and full platform access."}
                   </p>
                 </div>
                 {user?.kycStatus !== "pending" && (
                   <Button 
                     size="sm" 
-                    className="ml-4"
+                    className={`ml-4 ${
+                      user?.kycStatus === "rejected"
+                        ? "bg-red-600 hover:bg-red-700"
+                        : ""
+                    }`}
                     onClick={() => navigate("/kyc")}
                   >
-                    Complete KYC
+                    {user?.kycStatus === "rejected" ? "Re-submit KYC" : "Complete KYC"}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 )}

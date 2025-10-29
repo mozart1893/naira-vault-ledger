@@ -327,6 +327,8 @@ export default function Settings() {
                               ? "Your identity is verified" 
                               : user?.kycStatus === "pending"
                               ? "Verification in progress"
+                              : user?.kycStatus === "rejected"
+                              ? "Verification rejected - resubmit required"
                               : "Verify your identity"}
                           </p>
                         </div>
@@ -335,6 +337,14 @@ export default function Settings() {
                         <span className="text-green-600 text-sm font-medium">✅ Verified</span>
                       ) : user?.kycStatus === "pending" ? (
                         <span className="text-yellow-600 text-sm font-medium">⏳ Pending</span>
+                      ) : user?.kycStatus === "rejected" ? (
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => navigate("/kyc")}
+                        >
+                          Re-submit KYC
+                        </Button>
                       ) : (
                         <Button 
                           variant="outline" 

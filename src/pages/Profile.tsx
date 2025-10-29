@@ -499,19 +499,26 @@ export default function Profile() {
                   <>
                     <Separator />
                     <Button 
-                      variant="outline" 
+                      variant={user?.kycStatus === "rejected" ? "destructive" : "outline"}
                       className="w-full" 
                       size="sm"
                       onClick={() => navigate("/kyc")}
                       disabled={user?.kycStatus === "pending"}
                     >
                       {user?.kycStatus === "pending" 
-                        ? "KYC Verification Pending" 
+                        ? "KYC Verification Pending"
+                        : user?.kycStatus === "rejected"
+                        ? "Re-submit KYC Documents"
                         : "Complete KYC Verification"}
                     </Button>
                     {user?.kycStatus === "pending" && (
                       <p className="text-xs text-center text-gray-500 mt-2">
                         Your documents are being reviewed
+                      </p>
+                    )}
+                    {user?.kycStatus === "rejected" && (
+                      <p className="text-xs text-center text-red-600 mt-2">
+                        Your previous submission was rejected. Please resubmit with correct documents.
                       </p>
                     )}
                   </>
