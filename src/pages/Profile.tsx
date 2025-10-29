@@ -495,12 +495,25 @@ export default function Profile() {
                     </p>
                   </div>
                 </div>
-                {user?.kycStatus === "pending" && (
+                {user?.kycStatus !== "verified" && (
                   <>
                     <Separator />
-                    <Button variant="outline" className="w-full" size="sm">
-                      Complete KYC Verification
+                    <Button 
+                      variant="outline" 
+                      className="w-full" 
+                      size="sm"
+                      onClick={() => navigate("/kyc")}
+                      disabled={user?.kycStatus === "pending"}
+                    >
+                      {user?.kycStatus === "pending" 
+                        ? "KYC Verification Pending" 
+                        : "Complete KYC Verification"}
                     </Button>
+                    {user?.kycStatus === "pending" && (
+                      <p className="text-xs text-center text-gray-500 mt-2">
+                        Your documents are being reviewed
+                      </p>
+                    )}
                   </>
                 )}
               </CardContent>

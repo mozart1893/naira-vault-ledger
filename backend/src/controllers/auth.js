@@ -13,7 +13,7 @@ const generateTokens = (userId) => {
   const expiresIn = process.env.JWT_EXPIRES_IN || '1h'; // 1 hour default
   
   const accessToken = jwt.sign(
-    { userId, exp: Math.floor(Date.now() / 1000) + (60 * 60) }, // 1 hour from now
+    { userId }, // Don't set exp manually - let jwt.sign handle it
     process.env.JWT_SECRET,
     { expiresIn }
   );

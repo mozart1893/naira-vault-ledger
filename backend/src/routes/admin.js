@@ -366,6 +366,62 @@ router.get('/kyc/pending', authenticateAdmin, async (req, res) => {
 });
 
 /**
+ * @route   GET /api/admin/kyc/:userId/documents
+ * @desc    Get KYC documents for a user
+ * @access  Admin
+ */
+router.get('/kyc/:userId/documents', authenticateAdmin, async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const result = await query(
+      `SELECT id_card_data, id_card_type, id_card_name,
+              selfie_data, selfie_type, selfie_name
+       FROM kyc_documents
+       WHERE user_id = $1`,
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'DOCUMENTS_NOT_FOUND',
+          message: 'No KYC documents found for this user'
+        }
+      });
+    }
+
+    const docs = result.rows[0];
+
+    res.status(200).json({
+      success: true,
+      data: {
+        idCard: {
+          data: docs.id_card_data,
+          type: docs.id_card_type,
+          name: docs.id_card_name
+        },
+        selfie: {
+          data: docs.selfie_data,
+          type: docs.selfie_type,
+          name: docs.selfie_name
+        }
+      }
+    });
+  } catch (error) {
+    logger.error('Error fetching KYC documents:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to fetch documents'
+      }
+    });
+  }
+});
+
+/**
  * @route   PUT /api/admin/kyc/:userId/approve
  * @desc    Approve KYC verification
  * @access  Admin
@@ -482,6 +538,69 @@ router.put('/kyc/:userId/reject', authenticateAdmin, async (req, res) => {
       error: {
         code: 'INTERNAL_SERVER_ERROR',
         message: 'Failed to reject KYC'
+      }
+    });
+  }
+});
+
+/**
+ * @route   PUT /api/admin/kyc/:userId/allow-resubmission
+ * @desc    Allow user to resubmit KYC (reset from rejected to pending)
+ * @access  Admin
+ */
+router.put('/kyc/:userId/allow-resubmission', authenticateAdmin, async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Check current status
+    const checkResult = await query(
+      'SELECT id, email, first_name, last_name, kyc_status FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'USER_NOT_FOUND',
+          message: 'User not found'
+        }
+      });
+    }
+
+    const user = checkResult.rows[0];
+
+    // Reset KYC status to pending to allow resubmission
+    const result = await query(
+      `UPDATE users 
+       SET kyc_status = 'pending',
+           updated_at = NOW()
+       WHERE id = $1
+       RETURNING id, email, first_name, last_name, kyc_status`,
+      [userId]
+    );
+
+    logger.info('KYC resubmission allowed by admin', {
+      adminId: req.admin.id,
+      userId,
+      userEmail: user.email,
+      previousStatus: user.kyc_status
+    });
+
+    // TODO: Send email notification to user allowing resubmission
+
+    res.status(200).json({
+      success: true,
+      message: 'User can now resubmit KYC documents',
+      data: result.rows[0]
+    });
+  } catch (error) {
+    logger.error('Error allowing KYC resubmission:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to allow resubmission'
       }
     });
   }

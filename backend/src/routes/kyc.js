@@ -58,9 +58,67 @@ router.post('/submit', authenticate, async (req, res) => {
       ['pending', verificationType, verificationNumber, req.user.id]
     );
 
-    // TODO: Store documents in secure storage
+    // Store documents in database (base64 for demo - use S3/cloud storage in production)
+    // Create or update KYC documents table
+    try {
+      await query(
+        `INSERT INTO kyc_documents (user_id, id_card_data, id_card_type, id_card_name, 
+                                     selfie_data, selfie_type, selfie_name, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+         ON CONFLICT (user_id) 
+         DO UPDATE SET 
+           id_card_data = $2,
+           id_card_type = $3,
+           id_card_name = $4,
+           selfie_data = $5,
+           selfie_type = $6,
+           selfie_name = $7,
+           updated_at = NOW()`,
+        [
+          req.user.id,
+          documents.idCard,
+          documents.idCardType,
+          documents.idCardName,
+          documents.selfie,
+          documents.selfieType,
+          documents.selfieName
+        ]
+      );
+    } catch (tableError) {
+      // Table might not exist, create it
+      await query(`
+        CREATE TABLE IF NOT EXISTS kyc_documents (
+          id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+          user_id UUID UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+          id_card_data TEXT,
+          id_card_type VARCHAR(50),
+          id_card_name VARCHAR(255),
+          selfie_data TEXT,
+          selfie_type VARCHAR(50),
+          selfie_name VARCHAR(255),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      
+      // Try insert again
+      await query(
+        `INSERT INTO kyc_documents (user_id, id_card_data, id_card_type, id_card_name, 
+                                     selfie_data, selfie_type, selfie_name)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [
+          req.user.id,
+          documents.idCard,
+          documents.idCardType,
+          documents.idCardName,
+          documents.selfie,
+          documents.selfieType,
+          documents.selfieName
+        ]
+      );
+    }
+
     // TODO: Call CBN API for BVN/NIN validation
-    // TODO: Create audit log entry
     // TODO: Send notification to user and compliance team
 
     logger.info('KYC documents submitted', {

@@ -156,22 +156,23 @@ export default function KYCVerification() {
         },
       };
 
-      // TODO: Implement actual API call
-      // const response = await api.submitKYC(kycData);
+      // Submit KYC to backend
+      const response = await api.submitKYC(kycData);
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      if (response.success) {
+        setStep("submitted");
+        updateProgress("submitted");
+        toast.success("KYC documents submitted successfully!");
 
-      setStep("submitted");
-      updateProgress("submitted");
-      toast.success("KYC documents submitted successfully!");
-
-      // Update user KYC status in context
-      if (user) {
-        setUser({
-          ...user,
-          kycStatus: "pending",
-        });
+        // Update user KYC status in context
+        if (user) {
+          setUser({
+            ...user,
+            kycStatus: "pending",
+          });
+        }
+      } else {
+        throw new Error(response.error?.message || "Submission failed");
       }
     } catch (err: any) {
       const errorMessage = err.message || "KYC submission failed";
@@ -677,16 +678,34 @@ export default function KYCVerification() {
                     type="button"
                     variant="outline"
                     onClick={() => { setStep("verification"); updateProgress("verification"); }}
+                    disabled={loading}
                   >
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back
                   </Button>
                   <Button
-                    onClick={() => { setStep("review"); updateProgress("review"); }}
-                    disabled={!idCardFile || !selfieFile}
+                    type="button"
+                    onClick={() => {
+                      if (idCardFile && selfieFile) {
+                        setStep("review");
+                        updateProgress("review");
+                      } else {
+                        toast.error("Please upload both documents before continuing");
+                      }
+                    }}
+                    disabled={!idCardFile || !selfieFile || loading}
                   >
-                    Continue to Review
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        Continue to Review
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </>
+                    )}
                   </Button>
                 </div>
               </CardContent>

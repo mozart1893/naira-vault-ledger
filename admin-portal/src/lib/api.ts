@@ -110,6 +110,10 @@ class AdminApiClient {
     return this.request<any>(`/admin/kyc/${kycId}`);
   }
 
+  async getKYCDocuments(userId: string) {
+    return this.request<any>(`/admin/kyc/${userId}/documents`);
+  }
+
   async approveKYC(kycId: string, notes?: string) {
     return this.request<any>(`/admin/kyc/${kycId}/approve`, {
       method: 'PUT',
@@ -121,6 +125,12 @@ class AdminApiClient {
     return this.request<any>(`/admin/kyc/${kycId}/reject`, {
       method: 'PUT',
       body: JSON.stringify({ reason, notes }),
+    });
+  }
+
+  async allowKYCResubmission(userId: string) {
+    return this.request<any>(`/admin/kyc/${userId}/allow-resubmission`, {
+      method: 'PUT',
     });
   }
 
