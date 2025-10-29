@@ -1,35 +1,26 @@
-
-import { CURRENCIES, TRANSACTION_TYPES, TRANSACTION_STATUS } from "@/lib/constants";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import { CURRENCIES } from "@/lib/constants";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
-import { 
-  ArrowDown, 
-  ArrowUp, 
-  RotateCcw, 
-  CreditCard, 
-  Clock, 
-  CheckCircle, 
-  XCircle 
-} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { ArrowUpCircle, ArrowDownCircle, ArrowRightLeft, RefreshCw } from "lucide-react";
 
 interface Transaction {
   id: string;
-  type: string;
-  amount: number;
-  currencyCode: string;
-  targetCurrencyCode?: string;
-  targetAmount?: number;
-  status: string;
-  description: string;
-  timestamp: string;
   reference: string;
+  type: string;
+  status: string;
+  amount: number;
+  currency: string | any;
+  currencyCode?: string;
+  description: string;
+  createdAt: string;
+  fee?: number;
 }
 
 interface TransactionListProps {
@@ -37,129 +28,172 @@ interface TransactionListProps {
 }
 
 export const TransactionList = ({ transactions }: TransactionListProps) => {
-  const getTransactionIcon = (type: string) => {
+  if (!transactions || transactions.length === 0) {
+    return (
+      <div className="rounded-md border">
+        <div className="py-12 text-center text-gray-500">
+          <p>No transactions found</p>
+          <p className="text-sm mt-2">Your transaction history will appear here</p>
+        </div>
+      </div>
+    );
+  }
+
+  const getTypeIcon = (type: string) => {
     switch (type) {
-      case TRANSACTION_TYPES.DEPOSIT:
-        return <ArrowDown className="h-4 w-4 text-green-500" />;
-      case TRANSACTION_TYPES.WITHDRAWAL:
-        return <ArrowUp className="h-4 w-4 text-red-500" />;
-      case TRANSACTION_TYPES.TRANSFER:
-        return <CreditCard className="h-4 w-4 text-blue-500" />;
-      case TRANSACTION_TYPES.CONVERSION:
-        return <RotateCcw className="h-4 w-4 text-purple-500" />;
+      case 'deposit':
+        return <ArrowDownCircle className="h-4 w-4 text-green-600" />;
+      case 'withdrawal':
+        return <ArrowUpCircle className="h-4 w-4 text-red-600" />;
+      case 'transfer':
+        return <ArrowRightLeft className="h-4 w-4 text-blue-600" />;
+      case 'conversion':
+        return <RefreshCw className="h-4 w-4 text-purple-600" />;
       default:
-        return null;
+        return <ArrowRightLeft className="h-4 w-4 text-gray-600" />;
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case TRANSACTION_STATUS.PENDING:
-        return <Clock className="h-4 w-4 text-amber-500" />;
-      case TRANSACTION_STATUS.COMPLETED:
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case TRANSACTION_STATUS.FAILED:
-        return <XCircle className="h-4 w-4 text-red-500" />;
-      default:
-        return null;
-    }
+  const getTypeLabel = (type: string) => {
+    const labels: any = {
+      deposit: 'Deposit',
+      withdrawal: 'Withdrawal',
+      transfer: 'Transfer',
+      conversion: 'Conversion'
+    };
+    return labels[type] || type;
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case TRANSACTION_STATUS.PENDING:
-        return (
-          <Badge variant="outline" className="bg-amber-100 text-amber-800 hover:bg-amber-100">
-            Pending
-          </Badge>
-        );
-      case TRANSACTION_STATUS.COMPLETED:
-        return (
-          <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100">
-            Completed
-          </Badge>
-        );
-      case TRANSACTION_STATUS.FAILED:
-        return (
-          <Badge variant="outline" className="bg-red-100 text-red-800 hover:bg-red-100">
-            Failed
-          </Badge>
-        );
+    switch (status?.toLowerCase()) {
+      case 'completed':
+        return <Badge className="bg-green-600">Completed</Badge>;
+      case 'pending':
+        return <Badge variant="secondary">Pending</Badge>;
+      case 'failed':
+        return <Badge variant="destructive">Failed</Badge>;
       default:
-        return null;
+        return <Badge variant="outline">{status || 'Unknown'}</Badge>;
     }
   };
 
   const formatAmount = (amount: number, currencyCode: string) => {
-    const currency = CURRENCIES[currencyCode as keyof typeof CURRENCIES];
-    return `${currency.symbol}${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const symbols: any = {
+      NGN: '₦',
+      USD: '$',
+      GBP: '£',
+      EUR: '€'
+    };
+    
+    const symbol = symbols[currencyCode] || currencyCode;
+    return `${symbol}${amount.toLocaleString('en-US', { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    })}`;
+  };
+
+  const getCurrencyCode = (transaction: Transaction): string => {
+    // Handle both string currency and object currency
+    if (typeof transaction.currency === 'string') {
+      return transaction.currency;
+    }
+    if (transaction.currencyCode) {
+      return transaction.currencyCode;
+    }
+    if (transaction.currency?.code) {
+      return transaction.currency.code;
+    }
+    return 'NGN'; // Default fallback
   };
 
   const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleString('en-US', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    try {
+      const date = new Date(timestamp);
+      return date.toLocaleString('en-US', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return timestamp;
+    }
+  };
+
+  const getAmountColor = (type: string) => {
+    switch (type) {
+      case 'deposit':
+        return 'text-green-600';
+      case 'withdrawal':
+        return 'text-red-600';
+      case 'conversion':
+        return 'text-purple-600';
+      default:
+        return 'text-gray-900';
+    }
+  };
+
+  const getAmountPrefix = (type: string) => {
+    switch (type) {
+      case 'deposit':
+        return '+';
+      case 'withdrawal':
+        return '-';
+      default:
+        return '';
+    }
   };
 
   return (
-    <div className="rounded-md border animate-fade-in">
+    <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead className="w-[120px]">Type</TableHead>
             <TableHead>Description</TableHead>
             <TableHead>Amount</TableHead>
-            <TableHead className="hidden md:table-cell">Reference</TableHead>
-            <TableHead className="hidden md:table-cell">Date & Time</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead className="text-right">Date</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {transactions.map((transaction) => (
-            <TableRow key={transaction.id}>
-              <TableCell className="font-medium">
-                <div className="flex items-center space-x-2">
-                  {getTransactionIcon(transaction.type)}
-                  <span className="capitalize">{transaction.type}</span>
-                </div>
-              </TableCell>
-              <TableCell>
-                {transaction.description}
-                {transaction.type === TRANSACTION_TYPES.CONVERSION && transaction.targetCurrencyCode && (
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {`${transaction.currencyCode} → ${transaction.targetCurrencyCode}`}
+          {transactions.map((transaction) => {
+            const currencyCode = getCurrencyCode(transaction);
+            
+            return (
+              <TableRow key={transaction.id}>
+                <TableCell>
+                  <div className="flex items-center space-x-2">
+                    {getTypeIcon(transaction.type)}
+                    <span className="font-medium">{getTypeLabel(transaction.type)}</span>
                   </div>
-                )}
-              </TableCell>
-              <TableCell>
-                <div className="font-semibold">
-                  {formatAmount(transaction.amount, transaction.currencyCode)}
-                </div>
-                {transaction.type === TRANSACTION_TYPES.CONVERSION && transaction.targetAmount && transaction.targetCurrencyCode && (
-                  <div className="text-xs text-muted-foreground">
-                    {`→ ${formatAmount(transaction.targetAmount, transaction.targetCurrencyCode)}`}
+                </TableCell>
+                <TableCell>
+                  <div>
+                    <p className="font-medium">{transaction.description || 'Transaction'}</p>
+                    <p className="text-xs text-gray-500">{transaction.reference}</p>
                   </div>
-                )}
-              </TableCell>
-              <TableCell className="hidden md:table-cell">
-                <code className="text-xs">{transaction.reference}</code>
-              </TableCell>
-              <TableCell className="hidden md:table-cell">
-                {formatTimestamp(transaction.timestamp)}
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center space-x-2">
-                  {getStatusIcon(transaction.status)}
+                </TableCell>
+                <TableCell>
+                  <span className={`font-semibold ${getAmountColor(transaction.type)}`}>
+                    {getAmountPrefix(transaction.type)}{formatAmount(transaction.amount, currencyCode)}
+                  </span>
+                  {transaction.fee && transaction.fee > 0 && (
+                    <p className="text-xs text-gray-500">Fee: {formatAmount(transaction.fee, currencyCode)}</p>
+                  )}
+                </TableCell>
+                <TableCell>
                   {getStatusBadge(transaction.status)}
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
+                </TableCell>
+                <TableCell className="text-right">
+                  <span className="text-sm text-gray-600">
+                    {formatTimestamp(transaction.createdAt)}
+                  </span>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>
