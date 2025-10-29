@@ -1,19 +1,43 @@
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { CurrencyCard } from "@/components/CurrencyCard";
 import { TransactionList } from "@/components/TransactionList";
 import { CurrencyConverter } from "@/components/CurrencyConverter";
-import { mockWallets, mockTransactions } from "@/lib/mockData";
+import { mockTransactions } from "@/lib/mockData";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Shield, AlertCircle, CheckCircle2, ArrowRight } from "lucide-react";
+import { api } from "@/lib/api";
+import { toast } from "sonner";
+import { Shield, AlertCircle, CheckCircle2, ArrowRight, Loader2 } from "lucide-react";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [wallets, setWallets] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchWallets();
+  }, []);
+
+  const fetchWallets = async () => {
+    try {
+      setLoading(true);
+      const response = await api.getWallets();
+      if (response.success) {
+        setWallets(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching wallets:', error);
+      toast.error('Failed to load wallets');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -95,19 +119,34 @@ const Dashboard = () => {
               </AlertDescription>
             </Alert>
           )}
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {mockWallets.map((wallet) => (
-              <CurrencyCard
-                key={wallet.id}
-                currencyCode={wallet.currencyCode as any}
-                ledgerBalance={wallet.ledgerBalance}
-                availableBalance={wallet.availableBalance}
-                holds={wallet.holds}
-                lastUpdated={wallet.lastUpdated}
-              />
-            ))}
-          </div>
+
+          {/* Wallets Section */}
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+            </div>
+          ) : wallets.length === 0 ? (
+            <Card className="mb-8">
+              <CardContent className="py-12 text-center">
+                <p className="text-gray-500">No wallets found. Complete your KYC verification to access wallets.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              {wallets.map((wallet) => (
+                <CurrencyCard
+                  key={wallet.id}
+                  currencyCode={wallet.currency as any}
+                  ledgerBalance={wallet.ledgerBalance}
+                  availableBalance={wallet.availableBalance}
+                  holds={wallet.holds}
+                  lastUpdated={wallet.createdAt}
+                  walletData={wallet}
+                  onPayoutSuccess={fetchWallets}
+                />
+              ))}
+            </div>
+          )}
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             <div className="lg:col-span-2">

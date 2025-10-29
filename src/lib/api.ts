@@ -130,18 +130,25 @@ class ApiClient {
 
   // Wallets
   async getWallets() {
-    return this.request<any[]>('/wallets');
+    return this.request<any>('/wallets');
   }
 
-  async createWallet(walletData: any) {
-    return this.request<any>('/wallets', {
+  async getEnabledCurrencies() {
+    return this.request<any>('/wallets/enabled-currencies');
+  }
+
+  async simulatePayout(walletId: string, amount: number, description: string) {
+    return this.request<any>('/wallets/payout', {
       method: 'POST',
-      body: JSON.stringify(walletData),
+      body: JSON.stringify({ walletId, amount, description }),
     });
   }
 
-  async getWallet(id: string) {
-    return this.request<any>(`/wallets/${id}`);
+  async convertCurrency(fromWalletId: string, toWalletId: string, amount: number) {
+    return this.request<any>('/wallets/convert', {
+      method: 'POST',
+      body: JSON.stringify({ fromWalletId, toWalletId, amount }),
+    });
   }
 
   // Transactions
