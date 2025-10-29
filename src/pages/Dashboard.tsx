@@ -5,7 +5,6 @@ import { Header } from "@/components/Header";
 import { CurrencyCard } from "@/components/CurrencyCard";
 import { TransactionList } from "@/components/TransactionList";
 import { EnhancedCurrencyConverter } from "@/components/EnhancedCurrencyConverter";
-import { mockTransactions } from "@/lib/mockData";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,24 +17,48 @@ const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [wallets, setWallets] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingTransactions, setLoadingTransactions] = useState(true);
 
   useEffect(() => {
     fetchWallets();
+    fetchTransactions();
   }, []);
 
   const fetchWallets = async () => {
     try {
       setLoading(true);
-      const response = await api.getWallets();
-      if (response.success) {
-        setWallets(response.data);
+      const response: any = await api.getWallets();
+      if (response?.success && response?.data) {
+        setWallets(Array.isArray(response.data) ? response.data : []);
+      } else {
+        setWallets([]);
       }
     } catch (error) {
       console.error('Error fetching wallets:', error);
-      toast.error('Failed to load wallets');
+      // Set empty array instead of showing error toast
+      setWallets([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTransactions = async () => {
+    try {
+      setLoadingTransactions(true);
+      const response: any = await api.getTransactions({ limit: 20 });
+      if (response?.success && response?.data?.transactions) {
+        setTransactions(Array.isArray(response.data.transactions) ? response.data.transactions : []);
+      } else {
+        setTransactions([]);
+      }
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      // Set empty array so dashboard still displays
+      setTransactions([]);
+    } finally {
+      setLoadingTransactions(false);
     }
   };
 
@@ -161,31 +184,67 @@ const Dashboard = () => {
                 </TabsList>
                 
                 <TabsContent value="all">
-                  <TransactionList transactions={mockTransactions} />
+                  {loadingTransactions ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+                    </div>
+                  ) : transactions.length === 0 ? (
+                    <Card>
+                      <CardContent className="py-12 text-center">
+                        <p className="text-gray-500">No transactions yet. Start by making a payout or currency conversion!</p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <TransactionList transactions={transactions} />
+                  )}
                 </TabsContent>
                 
                 <TabsContent value="deposits">
-                  <TransactionList 
-                    transactions={mockTransactions.filter(t => t.type === 'deposit')} 
-                  />
+                  {loadingTransactions ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+                    </div>
+                  ) : (
+                    <TransactionList 
+                      transactions={transactions.filter(t => t.type === 'deposit')} 
+                    />
+                  )}
                 </TabsContent>
                 
                 <TabsContent value="withdrawals">
-                  <TransactionList 
-                    transactions={mockTransactions.filter(t => t.type === 'withdrawal')} 
-                  />
+                  {loadingTransactions ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+                    </div>
+                  ) : (
+                    <TransactionList 
+                      transactions={transactions.filter(t => t.type === 'withdrawal')} 
+                    />
+                  )}
                 </TabsContent>
                 
                 <TabsContent value="transfers">
-                  <TransactionList 
-                    transactions={mockTransactions.filter(t => t.type === 'transfer')} 
-                  />
+                  {loadingTransactions ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+                    </div>
+                  ) : (
+                    <TransactionList 
+                      transactions={transactions.filter(t => t.type === 'transfer')} 
+                    />
+                  )}
                 </TabsContent>
                 
                 <TabsContent value="conversions">
-                  <TransactionList 
-                    transactions={mockTransactions.filter(t => t.type === 'conversion')} 
-                  />
+                  {loadingTransactions ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+                    </div>
+                  ) : (
+                    <TransactionList 
+                      transactions={transactions.filter(t => t.type === 'conversion')} 
+                    />
+                  )}
                 </TabsContent>
               </Tabs>
             </div>
