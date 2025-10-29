@@ -232,6 +232,34 @@ const verifyOTPHandler = async (req, res) => {
         logger.error('Error sending welcome email:', error);
       });
 
+      // Initialize default wallets for new user (500 in each currency)
+      try {
+        const SUPPORTED_CURRENCIES = ['NGN', 'USD', 'GBP', 'EUR'];
+        const DEFAULT_BALANCE = 500;
+
+        for (const currency of SUPPORTED_CURRENCIES) {
+          // Check if wallet exists
+          const existingWallet = await query(
+            'SELECT id FROM wallets WHERE user_id = $1 AND currency = $2',
+            [user.id, currency]
+          );
+
+          if (existingWallet.rows.length === 0) {
+            // Create wallet with default balance
+            await query(
+              `INSERT INTO wallets (user_id, currency, ledger_balance, available_balance, is_active)
+               VALUES ($1, $2, $3, $3, true)`,
+              [user.id, currency, DEFAULT_BALANCE]
+            );
+          }
+        }
+
+        logger.info('Default wallets initialized', { userId: user.id });
+      } catch (walletError) {
+        logger.error('Error initializing wallets:', walletError);
+        // Continue even if wallet creation fails
+      }
+
       // Generate tokens
       const tokens = generateTokens(user.id);
 

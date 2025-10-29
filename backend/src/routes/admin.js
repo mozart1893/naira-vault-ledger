@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { query } = require('../config/database');
+const { query, transaction } = require('../config/database');
 const logger = require('../utils/logger');
+const { v4: uuidv4 } = require('uuid');
+const walletsModule = require('./wallets');
 
 // Admin authentication middleware (simplified for demo)
 const authenticateAdmin = (req, res, next) => {
@@ -671,6 +673,203 @@ router.get('/analytics/transaction-volume', authenticateAdmin, async (req, res) 
     });
   }
 });
+
+/**
+ * @route   POST /api/admin/wallets/payin
+ * @desc    Simulate pay-in (add funds to user wallet)
+ * @access  Admin
+ */
+router.post('/wallets/payin', authenticateAdmin, async (req, res) => {
+  try {
+    const { userId, currency, amount, description } = req.body;
+
+    if (!userId || !currency || !amount || amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'User ID, currency, and valid amount are required'
+        }
+      });
+    }
+
+    // Check if currency is enabled
+    if (!walletsModule.enabledCurrencies[currency]) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'CURRENCY_DISABLED',
+          message: 'This currency is currently disabled'
+        }
+      });
+    }
+
+    // Get or create wallet
+    let walletResult = await query(
+      'SELECT * FROM wallets WHERE user_id = $1 AND currency = $2',
+      [userId, currency]
+    );
+
+    let wallet;
+    if (walletResult.rows.length === 0) {
+      // Create wallet if doesn't exist
+      const createResult = await query(
+        `INSERT INTO wallets (user_id, currency, ledger_balance, available_balance)
+         VALUES ($1, $2, 0, 0)
+         RETURNING *`,
+        [userId, currency]
+      );
+      wallet = createResult.rows[0];
+    } else {
+      wallet = walletResult.rows[0];
+    }
+
+    // Process pay-in
+    await transaction(async (client) => {
+      const txnRef = `PAYIN-${Date.now()}-${uuidv4().substring(0, 8)}`;
+
+      // Create transaction record
+      await client.query(
+        `INSERT INTO transactions (reference, user_id, transaction_type, status, amount, currency, description, metadata)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          txnRef,
+          userId,
+          'deposit',
+          'completed',
+          amount,
+          currency,
+          description || `Admin simulated pay-in - ${currency}`,
+          JSON.stringify({ type: 'admin_payin', adminId: req.admin.id })
+        ]
+      );
+
+      // Update wallet balance
+      await client.query(
+        `UPDATE wallets 
+         SET ledger_balance = ledger_balance + $1,
+             available_balance = available_balance + $1,
+             updated_at = NOW()
+         WHERE id = $2`,
+        [amount, wallet.id]
+      );
+    });
+
+    logger.info('Admin pay-in processed', {
+      adminId: req.admin.id,
+      userId,
+      amount,
+      currency
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Pay-in processed successfully',
+      data: {
+        userId,
+        currency,
+        amount
+      }
+    });
+  } catch (error) {
+    logger.error('Admin pay-in error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to process pay-in'
+      }
+    });
+  }
+});
+
+/**
+ * @route   GET /api/admin/currencies
+ * @desc    Get all currencies and their enabled status
+ * @access  Admin
+ */
+router.get('/currencies', authenticateAdmin, async (req, res) => {
+  try {
+    const currencies = Object.keys(walletsModule.enabledCurrencies).map(code => ({
+      code,
+      name: getCurrencyName(code),
+      enabled: walletsModule.enabledCurrencies[code]
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: currencies
+    });
+  } catch (error) {
+    logger.error('Error fetching currencies:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to fetch currencies'
+      }
+    });
+  }
+});
+
+/**
+ * @route   PUT /api/admin/currencies/:code/toggle
+ * @desc    Enable or disable a currency
+ * @access  Admin
+ */
+router.put('/currencies/:code/toggle', authenticateAdmin, async (req, res) => {
+  try {
+    const { code } = req.params;
+    const { enabled } = req.body;
+
+    if (!walletsModule.enabledCurrencies.hasOwnProperty(code)) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'CURRENCY_NOT_FOUND',
+          message: 'Currency not supported'
+        }
+      });
+    }
+
+    walletsModule.enabledCurrencies[code] = enabled;
+
+    logger.info('Currency toggled by admin', {
+      adminId: req.admin.id,
+      currency: code,
+      enabled
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Currency ${code} ${enabled ? 'enabled' : 'disabled'}`,
+      data: {
+        code,
+        enabled
+      }
+    });
+  } catch (error) {
+    logger.error('Error toggling currency:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to toggle currency'
+      }
+    });
+  }
+});
+
+// Helper function
+function getCurrencyName(code) {
+  const names = {
+    NGN: 'Nigerian Naira',
+    USD: 'US Dollar',
+    GBP: 'British Pound',
+    EUR: 'Euro'
+  };
+  return names[code] || code;
+}
 
 module.exports = router;
 
