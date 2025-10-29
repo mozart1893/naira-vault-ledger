@@ -142,6 +142,26 @@ class AdminApiClient {
     
     return this.request<any>(`/admin/analytics?${query.toString()}`);
   }
+
+  // Wallet Management
+  async simulatePayin(userId: string, currency: string, amount: number, description: string) {
+    return this.request<any>('/admin/wallets/payin', {
+      method: 'POST',
+      body: JSON.stringify({ userId, currency, amount, description }),
+    });
+  }
+
+  // Currency Management
+  async getCurrencies() {
+    return this.request<any>('/admin/currencies');
+  }
+
+  async toggleCurrency(code: string, enabled: boolean) {
+    return this.request<any>(`/admin/currencies/${code}/toggle`, {
+      method: 'PUT',
+      body: JSON.stringify({ enabled }),
+    });
+  }
 }
 
 // Create and export a singleton instance

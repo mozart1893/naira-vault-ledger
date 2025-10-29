@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { CurrencyCard } from "@/components/CurrencyCard";
 import { TransactionList } from "@/components/TransactionList";
-import { CurrencyConverter } from "@/components/CurrencyConverter";
+import { EnhancedCurrencyConverter } from "@/components/EnhancedCurrencyConverter";
 import { mockTransactions } from "@/lib/mockData";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -192,7 +192,7 @@ const Dashboard = () => {
             
             <div>
               <h2 className="text-xl font-semibold mb-4 text-vault-dark">Currency Conversion</h2>
-              <CurrencyConverter />
+              <EnhancedCurrencyConverter />
             </div>
           </div>
         </div>

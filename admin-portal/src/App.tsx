@@ -8,6 +8,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import UsersManagement from "./pages/UsersManagement";
 import KYCManagement from "./pages/KYCManagement";
 import Analytics from "./pages/Analytics";
+import WalletManagement from "./pages/WalletManagement";
+import CurrencyManagement from "./pages/CurrencyManagement";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +52,22 @@ const App = () => (
             element={
               <AdminProtectedRoute>
                 <Analytics />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/wallets"
+            element={
+              <AdminProtectedRoute>
+                <WalletManagement />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/currencies"
+            element={
+              <AdminProtectedRoute>
+                <CurrencyManagement />
               </AdminProtectedRoute>
             }
           />

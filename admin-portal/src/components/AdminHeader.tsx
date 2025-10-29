@@ -16,6 +16,8 @@ import {
   Users,
   FileCheck,
   TrendingUp,
+  Wallet,
+  Globe,
   Settings,
   LogOut,
 } from "lucide-react";
@@ -68,6 +70,18 @@ export const AdminHeader = () => {
               <Button variant="ghost" className="text-gray-300 hover:text-white hover:bg-slate-800">
                 <TrendingUp className="mr-2 h-4 w-4" />
                 Analytics
+              </Button>
+            </Link>
+            <Link to="/wallets">
+              <Button variant="ghost" className="text-gray-300 hover:text-white hover:bg-slate-800">
+                <Wallet className="mr-2 h-4 w-4" />
+                Wallets
+              </Button>
+            </Link>
+            <Link to="/currencies">
+              <Button variant="ghost" className="text-gray-300 hover:text-white hover:bg-slate-800">
+                <Globe className="mr-2 h-4 w-4" />
+                Currencies
               </Button>
             </Link>
 
